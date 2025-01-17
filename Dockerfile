@@ -1,5 +1,11 @@
-FROM python:3.12-slim-bookworm
+FROM docker:latest
 
-RUN pip install runlike
+ARG VERSION
+
+RUN apk add --no-cache python3 py3-pip
+
+RUN python3 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+RUN pip3 install runlike
 
 ENTRYPOINT ["runlike"]
