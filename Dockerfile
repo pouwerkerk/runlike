@@ -5,21 +5,19 @@ RUN apk add --no-cache python3 py3-pip curl
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
-# Set up virtual environment
-RUN python3 -m venv /app/venv
-ENV PATH="/app/venv/bin:/root/.local/bin:$PATH"
+# Add Poetry to PATH
+ENV PATH="/root/.local/bin:$PATH"
 
 # Copy poetry files
-COPY runlike/runlike /runlike
-COPY runlike/pyproject.toml /runlike/pyproject.toml
-COPY runlike/poetry.lock /runlike/poetry.lock
+COPY runlike/pyproject.toml runlike/poetry.lock* /runlike/
+COPY runlike/runlike /runlike/runlike
 WORKDIR /runlike
 
-# Install dependencies
-RUN poetry config virtualenvs.create false \
+# Install dependencies using Poetry with virtualenv
+RUN poetry config virtualenvs.in-project true \
     && poetry install --no-interaction --no-ansi
 
-# Copy source code
-COPY runlike/runlike /runlike/runlike
+# Set the virtual environment path
+ENV PATH="/runlike/.venv/bin:$PATH"
 
-ENTRYPOINT ["runlike"]
+CMD ["runlike"]
