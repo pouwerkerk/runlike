@@ -12,6 +12,8 @@ ENV PATH="/root/.local/bin:$PATH"
 COPY runlike/pyproject.toml runlike/poetry.lock* /runlike/
 COPY runlike/runlike /runlike/runlike
 WORKDIR /runlike
+COPY inspector.py /runlike/runlike/inspector.py
+COPY runlike.py /runlike/runlike/runlike.py
 
 # Install dependencies using Poetry with virtualenv
 RUN poetry config virtualenvs.in-project true \
