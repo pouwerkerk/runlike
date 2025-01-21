@@ -1,7 +1,5 @@
 FROM docker:latest
 
-ARG VERSION
-
 RUN apk add --no-cache python3 py3-pip
 
 RUN python3 -m venv /app/venv
