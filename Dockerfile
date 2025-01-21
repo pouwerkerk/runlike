@@ -1,6 +1,6 @@
 FROM docker:latest
 
-RUN apk add --no-cache python3 py3-pip curl
+RUN apk add --no-cache python3 py3-pip curl git
 
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 -
@@ -12,8 +12,9 @@ ENV PATH="/root/.local/bin:$PATH"
 COPY runlike/pyproject.toml runlike/poetry.lock* /runlike/
 COPY runlike/runlike /runlike/runlike
 WORKDIR /runlike
-COPY inspector.py /runlike/runlike/inspector.py
-COPY runlike.py /runlike/runlike/runlike.py
+COPY changes.diff /changes.diff
+RUN git apply /changes.diff
+RUN rm /changes.diff
 
 # Install dependencies using Poetry with virtualenv
 RUN poetry config virtualenvs.in-project true \

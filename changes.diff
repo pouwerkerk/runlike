@@ -1,0 +1,106 @@
+diff --git a/runlike/inspector.py b/runlike/inspector.py
+index 8ebe3a6..9d7bfba 100644
+--- a/runlike/inspector.py
++++ b/runlike/inspector.py
+@@ -11,13 +11,22 @@ def die(message):
+ 
+ class Inspector(object):
+ 
+-    def __init__(self, container=None, no_name=None, use_volume_id=None, pretty=None):
++    def __init__(self, container=None, no_name=None, use_volume_id=None, pretty=None, no_hostname=None, no_macaddress=None, no_labels=None, no_runtime=None, no_workdir=None, no_detach=None, make_interactive=None):
+         self.container = container
+         self.no_name = no_name
+         self.use_volume_id = use_volume_id
+         self.pretty = pretty
+         self.container_facts = None
+         self.image_facts = None
++
++        self.no_hostname = no_hostname
++        self.no_macaddress = no_macaddress
++        self.no_labels = no_labels
++        self.no_runtime = no_runtime
++        self.no_workdir = no_workdir
++        self.no_detach = no_detach
++        self.make_interactive = make_interactive
++
+         self.options = []
+ 
+     def inspect(self):
+@@ -261,9 +270,11 @@ class Inspector(object):
+         name = self.get_container_fact("Name").split("/")[-1]
+         if not self.no_name:
+             self.options.append(f"--name={name}")
+-        self.parse_hostname()
++        if not self.no_hostname:
++            self.parse_hostname()
++        if not self.no_macaddress:
++            self.parse_macaddress()
+         self.parse_user()
+-        self.parse_macaddress()
+         self.parse_pid()
+         self.parse_cpuset()
+         self.parse_entrypoint()
+@@ -282,24 +293,31 @@ class Inspector(object):
+         if privileged:
+             self.options.append("--privileged")
+ 
+-        self.parse_workdir()
++        if not self.no_workdir:
++            self.parse_workdir()
+         self.parse_ports()
+         self.parse_links()
+         self.parse_restart()
+         self.parse_devices()
+-        self.parse_labels()
++        if not self.no_labels:
++            self.parse_labels()
+         self.parse_log()
+         self.parse_extra_hosts()
+-        self.parse_runtime()
++        if not self.no_runtime:
++            self.parse_runtime()
+         self.parse_memory()
+         self.parse_memory_reservation()
+ 
+         stdout_attached = self.get_container_fact("Config.AttachStdout")
+-        if not stdout_attached:
+-            self.options.append("--detach=true")
+ 
+-        if self.get_container_fact("Config.Tty"):
+-            self.options.append("-t")
++        if self.make_interactive:
++            self.options.append("-it")
++        else:
++            if not stdout_attached or not self.no_detach:
++                self.options.append("--detach=true")
++
++            if self.get_container_fact("Config.Tty"):
++                self.options.append("-t")
+ 
+         if self.get_container_fact("HostConfig.AutoRemove"):
+             self.options.append("--rm")
+diff --git a/runlike/runlike.py b/runlike/runlike.py
+index 243c631..10d2f30 100755
+--- a/runlike/runlike.py
++++ b/runlike/runlike.py
+@@ -22,11 +22,18 @@ except (ValueError, ImportError):
+     help="Keep the automatically assigned volume id")
+ @click.option("-p", "--pretty", is_flag=True)
+ @click.option("-s", "--stdin", is_flag=True)
+-def cli(container, no_name, use_volume_id, pretty, stdin):
++@click.option("-n", "--no-hostname", is_flag=True)
++@click.option("-m", "--no-macaddress", is_flag=True)
++@click.option("-l", "--no-labels", is_flag=True)
++@click.option("-r", "--no-runtime", is_flag=True)
++@click.option("-w", "--no-workdir", is_flag=True)
++@click.option("-d", "--no-detach", is_flag=True)
++@click.option("-i", "--make-interactive", is_flag=True)
++def cli(container, no_name, use_volume_id, pretty, stdin, no_hostname, no_macaddress, no_labels, no_runtime, no_workdir, no_detach, make_interactive):
+ 
+     # TODO: -i, -t, -d as added options that override the inspection
+     if container or stdin:
+-        ins = Inspector(container, no_name, use_volume_id, pretty)
++        ins = Inspector(container, no_name, use_volume_id, pretty, no_hostname, no_macaddress, no_labels, no_runtime, no_workdir, no_detach, make_interactive)
+         if container:
+             ins.inspect()
+         elif stdin:
